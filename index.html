@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rack Elevation Designer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">NETWORK PLANNING TOOL</p>
+      <h1>Rack Elevation Designer</h1>
+      <p class="subtitle">Lay out, validate, save, and export network rack elevations.</p>
+    </div>
+    <div class="header-actions">
+      <button id="newBtn" class="btn ghost">New</button>
+      <button id="undoBtn" class="btn ghost" title="Undo (Ctrl/Cmd+Z)">Undo</button>
+      <button id="redoBtn" class="btn ghost" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
+      <button id="exportMenuBtn" class="btn primary">Export ▾</button>
+      <div id="exportMenu" class="menu hidden">
+        <button data-export="svg">Elevation as SVG</button>
+        <button data-export="png">Elevation as PNG</button>
+        <button data-export="json">Project as JSON</button>
+        <button data-export="csv">Equipment list as CSV</button>
+        <button data-export="print">Print</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="sidebar left-panel" aria-label="Rack settings and equipment library">
+      <section class="panel">
+        <div class="section-heading">
+          <h2>Rack</h2>
+          <span id="saveStatus" class="status-pill">Saved locally</span>
+        </div>
+        <label>Project name
+          <input id="projectName" type="text" maxlength="80" value="Network Rack A">
+        </label>
+        <div class="field-grid two">
+          <label>Rack units
+            <input id="rackUnits" type="number" min="6" max="52" value="42">
+          </label>
+          <label>Rail width
+            <select id="rackWidth">
+              <option value="19">19 inch</option>
+              <option value="23">23 inch</option>
+            </select>
+          </label>
+        </div>
+        <div class="field-grid two">
+          <label>Rack ID
+            <input id="rackId" type="text" maxlength="30" value="RACK-A01">
+          </label>
+          <label>Location
+            <input id="location" type="text" maxlength="50" placeholder="MDF / Room 201">
+          </label>
+        </div>
+        <label class="check-row"><input id="numberFromTop" type="checkbox"> Number U positions from top</label>
+        <div class="inline-actions">
+          <button id="applyRackBtn" class="btn primary grow">Apply rack settings</button>
+          <button id="importBtn" class="btn ghost">Import</button>
+          <input id="importFile" type="file" accept="application/json,.json" hidden>
+        </div>
+        <p class="hint">Changing to a smaller rack is blocked if equipment would fall outside it.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Equipment library</h2>
+        <div id="presetGrid" class="preset-grid"></div>
+        <button id="customEquipmentBtn" class="btn ghost full">+ Custom equipment</button>
+        <p class="hint">Click a preset to add it to the first available space. Drag placed equipment to reposition it.</p>
+      </section>
+
+      <section class="panel compact">
+        <h2>Legend</h2>
+        <div id="legend" class="legend"></div>
+      </section>
+    </aside>
+
+    <section class="canvas-panel" aria-label="Rack elevation canvas">
+      <div class="canvas-toolbar">
+        <div class="view-toggle" role="group" aria-label="Rack face">
+          <button class="active" data-face="front">Front</button>
+          <button data-face="rear">Rear</button>
+        </div>
+        <div id="rackStats" class="rack-stats"></div>
+        <label class="zoom-control">Zoom
+          <input id="zoom" type="range" min="60" max="140" value="100">
+          <output id="zoomValue">100%</output>
+        </label>
+      </div>
+      <div id="canvasScroller" class="canvas-scroller">
+        <div id="rackCanvas" class="rack-stage" aria-label="Interactive rack elevation"></div>
+      </div>
+      <div id="messageBar" class="message-bar hidden" role="status"></div>
+    </section>
+
+    <aside class="sidebar right-panel" aria-label="Equipment properties">
+      <section class="panel">
+        <div class="section-heading">
+          <h2>Equipment</h2>
+          <span id="selectionBadge" class="status-pill neutral">None selected</span>
+        </div>
+        <div id="emptyInspector" class="empty-state">
+          <div class="empty-icon">▤</div>
+          <p>Select equipment in the rack to edit its properties.</p>
+        </div>
+        <form id="equipmentForm" class="hidden">
+          <label>Name
+            <input id="eqName" type="text" maxlength="60" required>
+          </label>
+          <div class="field-grid two">
+            <label>Height (U)
+              <input id="eqSize" type="number" min="1" max="20" required>
+            </label>
+            <label>Start U
+              <input id="eqStart" type="number" min="1" required>
+            </label>
+          </div>
+          <div class="field-grid two">
+            <label>Face
+              <select id="eqFace">
+                <option value="front">Front</option>
+                <option value="rear">Rear</option>
+                <option value="both">Both</option>
+              </select>
+            </label>
+            <label>Category
+              <select id="eqCategory">
+                <option>Network</option>
+                <option>Patch</option>
+                <option>Compute</option>
+                <option>Power</option>
+                <option>Storage</option>
+                <option>Other</option>
+              </select>
+            </label>
+          </div>
+          <label>Color
+            <div class="color-row"><input id="eqColor" type="color"><input id="eqColorText" type="text" maxlength="7" pattern="#[0-9a-fA-F]{6}"></div>
+          </label>
+          <label>Asset tag
+            <input id="eqAsset" type="text" maxlength="40" placeholder="Optional">
+          </label>
+          <label>Notes
+            <textarea id="eqNotes" rows="3" maxlength="300" placeholder="Model, ports, cabling, power…"></textarea>
+          </label>
+          <label class="check-row"><input id="eqLocked" type="checkbox"> Lock position</label>
+          <div class="form-actions">
+            <button class="btn primary grow" type="submit">Save changes</button>
+            <button id="duplicateBtn" class="btn ghost" type="button">Duplicate</button>
+            <button id="deleteBtn" class="btn danger" type="button">Delete</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel equipment-list-panel">
+        <div class="section-heading">
+          <h2>Installed equipment</h2>
+          <span id="equipmentCount">0 items</span>
+        </div>
+        <div id="equipmentList" class="equipment-list"></div>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="equipmentDialog">
+    <form id="addEquipmentForm" method="dialog">
+      <div class="dialog-header">
+        <div><p class="eyebrow">ADD TO RACK</p><h2>Custom equipment</h2></div>
+        <button class="icon-btn" value="cancel" aria-label="Close">×</button>
+      </div>
+      <label>Name<input id="newEqName" type="text" required maxlength="60" value="New device"></label>
+      <div class="field-grid two">
+        <label>Height (U)<input id="newEqSize" type="number" min="1" max="20" value="1" required></label>
+        <label>Placement
+          <select id="newEqPlacement"><option value="auto">First available</option><option value="manual">Choose start U</option></select>
+        </label>
+      </div>
+      <label id="manualStartLabel" class="hidden">Start U<input id="newEqStart" type="number" min="1" value="1"></label>
+      <div class="field-grid two">
+        <label>Face<select id="newEqFace"><option value="front">Front</option><option value="rear">Rear</option><option value="both">Both</option></select></label>
+        <label>Category<select id="newEqCategory"><option>Network</option><option>Patch</option><option>Compute</option><option>Power</option><option>Storage</option><option>Other</option></select></label>
+      </div>
+      <label>Color<input id="newEqColor" type="color" value="#2563eb"></label>
+      <div class="dialog-actions"><button class="btn ghost" value="cancel">Cancel</button><button id="confirmAddBtn" class="btn primary" value="default">Add equipment</button></div>
+    </form>
+  </dialog>
+
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

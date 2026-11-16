@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "projectName": "Sample MDF Rack",
+  "rackUnits": 42,
+  "rackWidth": 19,
+  "rackId": "MDF-R01",
+  "location": "Main Distribution Frame",
+  "numberFromTop": false,
+  "activeFace": "front",
+  "equipment": [
+    {"id":"sample-ups","name":"UPS","size":3,"start":1,"face":"front","category":"Power","color":"#15803d","asset":"","notes":"","locked":false},
+    {"id":"sample-server-1","name":"Virtualization Host 01","size":2,"start":4,"face":"front","category":"Compute","color":"#475569","asset":"SRV-001","notes":"","locked":false},
+    {"id":"sample-server-2","name":"Virtualization Host 02","size":2,"start":6,"face":"front","category":"Compute","color":"#475569","asset":"SRV-002","notes":"","locked":false},
+    {"id":"sample-cable","name":"Horizontal Cable Manager","size":1,"start":8,"face":"front","category":"Other","color":"#64748b","asset":"","notes":"","locked":false},
+    {"id":"sample-switch","name":"Core Network Switch","size":1,"start":9,"face":"front","category":"Network","color":"#2563eb","asset":"NET-001","notes":"48-port access switch","locked":false},
+    {"id":"sample-patch","name":"48-Port Patch Panel","size":2,"start":10,"face":"front","category":"Patch","color":"#7c3aed","asset":"","notes":"","locked":false},
+    {"id":"sample-pdu","name":"Vertical PDU (represented as 1U)","size":1,"start":1,"face":"rear","category":"Power","color":"#16a34a","asset":"PDU-001","notes":"Rear-face example","locked":false}
+  ]
+}
